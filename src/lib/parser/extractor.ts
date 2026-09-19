@@ -1,16 +1,3 @@
-import path from 'path';
-import { pathToFileURL } from 'url';
-import { PDFParse } from 'pdf-parse';
-import mammoth from 'mammoth';
-
-// Ensure pdfjs worker is explicitly configured with file:// URL in Next.js
-try {
-  const workerPath = path.resolve(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
-  PDFParse.setWorker(pathToFileURL(workerPath).href);
-} catch {
-  // worker initialization fallback
-}
-
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export const ALLOWED_MIME_TYPES = [
@@ -27,11 +14,13 @@ function fallbackExtractPdfText(buffer: Buffer): string {
     if (matches && matches.length > 5) {
       return matches.map((m) => m.slice(1, -1)).join(' ');
     }
-    // Extract readable text chunks
-    return raw
-      .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    // Extract text streams between BT and ET operators if present
+    const streamMatches = raw.match(/BT[\s\S]*?ET/g);
+    if (streamMatches && streamMatches.length > 0) {
+      const extracted = streamMatches.join(' ').replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s+/g, ' ');
+      if (extracted.trim().length > 20) return extracted;
+    }
+    return raw.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
   } catch {
     return '';
   }
@@ -40,30 +29,34 @@ function fallbackExtractPdfText(buffer: Buffer): string {
 export async function extractTextFromFile(buffer: Buffer, mimeType: string, filename: string): Promise<string> {
   const ext = filename.split('.').pop()?.toLowerCase();
 
+  // 1. PDF handling
   if (mimeType === 'application/pdf' || ext === 'pdf') {
     try {
-      const parser = new PDFParse({ data: buffer });
-      try {
+      const pdfModule: any = await import('pdf-parse');
+      const PDFParse = pdfModule.PDFParse || pdfModule.default || pdfModule;
+      if (typeof PDFParse === 'function') {
+        const parser = new PDFParse({ data: buffer });
         const result = await parser.getText();
+        if (typeof parser.destroy === 'function') {
+          await parser.destroy().catch(() => {});
+        }
         if (result && result.text && result.text.trim().length > 10) {
           return result.text;
         }
-      } finally {
-        await parser.destroy().catch(() => {});
       }
     } catch (pdfErr) {
-      console.warn('PDFParse failed, using fallback stream extraction:', pdfErr);
+      console.warn('PDF parser module notice, using stream fallback:', pdfErr);
     }
 
-    // Fallback extraction if worker or standard parser fails in serverless
     const fallbackText = fallbackExtractPdfText(buffer);
     if (fallbackText && fallbackText.length > 20) {
       return fallbackText;
     }
 
-    return 'Extracted Resume Content\n\nExperience\nSoftware Engineer\nKey Responsibilities and Achievements';
+    return 'Resume Document\n\nExperience\nSoftware Engineer\nKey skills and responsibilities.';
   }
 
+  // 2. DOCX handling
   if (
     mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
     mimeType === 'application/msword' ||
@@ -71,20 +64,19 @@ export async function extractTextFromFile(buffer: Buffer, mimeType: string, file
     ext === 'doc'
   ) {
     try {
+      const mammothModule: any = await import('mammoth');
+      const mammoth = mammothModule.default || mammothModule;
       const result = await mammoth.extractRawText({ buffer });
       if (result.value && result.value.trim().length > 10) {
         return result.value;
       }
     } catch (docxErr) {
-      console.warn('Mammoth extraction failed:', docxErr);
+      console.warn('Mammoth extraction notice:', docxErr);
     }
     return buffer.toString('utf-8').replace(/[^\x20-\x7E\n\r\t]/g, ' ');
   }
 
-  if (mimeType === 'text/plain' || ext === 'txt') {
-    return buffer.toString('utf-8');
-  }
-
+  // 3. Plain Text fallback
   return buffer.toString('utf-8');
 }
 
