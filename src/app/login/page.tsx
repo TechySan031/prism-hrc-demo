@@ -28,18 +28,23 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || 'Invalid credentials');
+        setErrorMsg(data.error || 'Invalid email or password');
         return;
       }
 
       addToast('success', `Welcome back, ${data.user.name}!`);
       await refreshUser();
-      router.push('/dashboard');
+      
+      if (data.user.role === 'ADMIN' || data.user.role === 'RECRUITER') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch {
       setErrorMsg('An unexpected error occurred. Please try again.');
     } finally {
@@ -48,16 +53,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-warm-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-warm-50 px-4 py-8">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-9 h-9 rounded-lg bg-prism-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-prism-600 flex items-center justify-center shadow-sm">
               <span className="text-white font-bold text-base">P</span>
             </div>
           </Link>
-          <h1 className="text-xl font-bold text-navy-800">Welcome back</h1>
-          <p className="text-sm text-warm-500 mt-1">Sign in to Prism HRC AI Resume Studio</p>
+          <h1 className="text-xl font-bold text-navy-800">Sign in to your account</h1>
+          <p className="text-sm text-warm-500 mt-1">Access your Prism HRC AI Resume Studio</p>
         </div>
 
         <div className="bg-white rounded-xl border border-border p-6 shadow-sm">
@@ -69,7 +74,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleFormLogin} className="space-y-4">
             <Input
-              label="Email"
+              label="Email address"
               type="email"
               placeholder="you@example.com"
               value={email}
@@ -85,7 +90,7 @@ export default function LoginPage() {
               required
             />
             <Button type="submit" className="w-full" loading={loading}>
-              Sign in
+              Sign In
             </Button>
           </form>
 
