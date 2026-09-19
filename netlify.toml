@@ -2,5 +2,9 @@
   command = "prisma generate && prisma db push && next build"
   publish = ".next"
 
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "AUTH_SECRET"
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/server/chunks"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"

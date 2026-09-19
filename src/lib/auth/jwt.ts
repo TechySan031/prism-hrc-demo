@@ -1,7 +1,9 @@
 import { SignJWT, jwtVerify } from 'jose';
 
-const AUTH_SECRET = process.env.AUTH_SECRET || 'prism_hrc_super_secret_session_signing_key_32_bytes_long_12345';
-const secretKey = new TextEncoder().encode(AUTH_SECRET);
+function getSecretKey(): Uint8Array {
+  const secret = process.env.AUTH_SECRET || 'prism_hrc_super_secret_session_signing_key_32_bytes_long_12345';
+  return new TextEncoder().encode(secret);
+}
 
 export interface TokenPayload {
   userId: string;
@@ -14,12 +16,12 @@ export async function signToken(payload: TokenPayload, expiresIn: string = '7d')
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(expiresIn)
-    .sign(secretKey);
+    .sign(getSecretKey());
 }
 
 export async function verifyToken(token: string): Promise<TokenPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, secretKey);
+    const { payload } = await jwtVerify(token, getSecretKey());
     return {
       userId: payload.userId as string,
       email: payload.email as string,
