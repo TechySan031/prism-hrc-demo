@@ -3,33 +3,26 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Quick DB connectivity check
-    await prisma.$queryRaw`SELECT 1`;
+    const tables: any = await prisma.$queryRaw`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`;
+    let userCount = -1;
+    let userError = null;
+    try {
+      userCount = await prisma.user.count();
+    } catch (e: any) {
+      userError = e?.message || String(e);
+    }
 
     return NextResponse.json({
       status: 'healthy',
-      service: 'Prism HRC AI Resume Agent',
-      version: '1.0.0',
       database: 'connected',
-      timestamp: new Date().toISOString(),
-      agentCapabilities: [
-        'parse_resume',
-        'extract_resume_structure',
-        'analyze_resume',
-        'detect_missing_information',
-        'analyze_job_description',
-        'match_resume_to_job',
-        'generate_improvement_suggestions',
-        'rewrite_resume_content',
-        'validate_factuality',
-        'save_resume_version',
-        'generate_pdf',
-        'generate_docx',
-      ],
+      tableCount: tables.length,
+      tables: tables.map((t: any) => t.table_name),
+      userCount,
+      userError,
     });
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json(
-      { status: 'unhealthy', database: 'disconnected', error: String(error) },
+      { status: 'unhealthy', database: 'disconnected', error: error?.message || String(error) },
       { status: 503 }
     );
   }

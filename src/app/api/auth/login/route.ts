@@ -61,8 +61,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Login error:', error);
+    const msg = error instanceof Error ? error.message : 'Failed to sign in. Please try again.';
     return NextResponse.json(
-      { error: 'Failed to sign in. Please try again.' },
+      { error: msg },
       { status: 500 }
     );
   }
