@@ -1,0 +1,228 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+/* ── Prism HRC Design System ─────────────────────────────────── */
+
+:root {
+  /* Brand colors — muted teal-blue inspired by Prism HRC */
+  --prism-50: #f0f7f9;
+  --prism-100: #d9edf2;
+  --prism-200: #b5dce6;
+  --prism-300: #82c3d3;
+  --prism-400: #4fa3b7;
+  --prism-500: #3b7a8c;
+  --prism-600: #2a5f6f;
+  --prism-700: #244e5c;
+  --prism-800: #22414d;
+  --prism-900: #1e3742;
+  --prism-950: #0f2029;
+
+  /* Neutral warm grays */
+  --neutral-25: #fdfcfb;
+  --neutral-50: #fafaf8;
+  --neutral-100: #f5f3ef;
+  --neutral-200: #e8e5df;
+  --neutral-300: #d5d0c8;
+  --neutral-400: #b8b0a4;
+  --neutral-500: #9a9185;
+  --neutral-600: #7a7168;
+  --neutral-700: #5c554e;
+  --neutral-800: #3d3833;
+  --neutral-900: #262220;
+  --neutral-950: #171411;
+
+  /* Navy typography */
+  --navy-700: #1e293b;
+  --navy-800: #0f1b2d;
+  --navy-900: #0b1320;
+
+  /* Functional colors */
+  --success: #22885a;
+  --success-light: #ecfdf3;
+  --warning: #b45309;
+  --warning-light: #fefce8;
+  --error: #dc2626;
+  --error-light: #fef2f2;
+  --info: #2563eb;
+  --info-light: #eff6ff;
+
+  /* Surfaces */
+  --background: #ffffff;
+  --foreground: var(--navy-800);
+  --surface: #ffffff;
+  --surface-raised: #fafaf8;
+  --border: #e8e5df;
+  --border-strong: #d5d0c8;
+  --ring: var(--prism-400);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-prism-50: var(--prism-50);
+  --color-prism-100: var(--prism-100);
+  --color-prism-200: var(--prism-200);
+  --color-prism-300: var(--prism-300);
+  --color-prism-400: var(--prism-400);
+  --color-prism-500: var(--prism-500);
+  --color-prism-600: var(--prism-600);
+  --color-prism-700: var(--prism-700);
+  --color-prism-800: var(--prism-800);
+  --color-prism-900: var(--prism-900);
+  --color-prism-950: var(--prism-950);
+
+  --color-warm-25: var(--neutral-25);
+  --color-warm-50: var(--neutral-50);
+  --color-warm-100: var(--neutral-100);
+  --color-warm-200: var(--neutral-200);
+  --color-warm-300: var(--neutral-300);
+  --color-warm-400: var(--neutral-400);
+  --color-warm-500: var(--neutral-500);
+  --color-warm-600: var(--neutral-600);
+  --color-warm-700: var(--neutral-700);
+  --color-warm-800: var(--neutral-800);
+  --color-warm-900: var(--neutral-900);
+  --color-warm-950: var(--neutral-950);
+
+  --color-navy-700: var(--navy-700);
+  --color-navy-800: var(--navy-800);
+  --color-navy-900: var(--navy-900);
+
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  --color-warn: var(--warning);
+  --color-warn-light: var(--warning-light);
+  --color-error: var(--error);
+  --color-error-light: var(--error-light);
+  --color-info: var(--info);
+  --color-info-light: var(--info-light);
+
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ring: var(--ring);
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Base ─────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Focus Styles ─────────────────────────────────────────────── */
+
+*:focus-visible {
+  outline: 2px solid var(--prism-400);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Typography ───────────────────────────────────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--navy-800);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-400);
+}
+
+/* ── Print styles for resume preview ──────────────────────────── */
+
+@media print {
+  body { background: white !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+}
+
+/* ── Animations ───────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-gentle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.2s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 2s ease-in-out infinite;
+}
+
+/* ── Score ring ────────────────────────────────────────────────── */
+
+.score-ring {
+  transition: stroke-dashoffset 1s ease-out;
+}
+
+/* ── Resume preview A4 ────────────────────────────────────────── */
+
+.resume-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm 18mm;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 900px) {
+  .resume-page {
+    width: 100%;
+    min-height: auto;
+    padding: 6mm 4mm;
+  }
+}

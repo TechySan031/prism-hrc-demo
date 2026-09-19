@@ -1,0 +1,38 @@
+{
+  "name": "prism-hrc-resume-studio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "bcryptjs": "^3.0.3",
+    "docx": "^9.7.1",
+    "jose": "^6.2.12",
+    "lucide-react": "^0.460.0",
+    "mammoth": "^1.12.3",
+    "next": "16.3.5",
+    "openai": "^6.49.0",
+    "pdf-parse": "^2.4.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.5",
+    "prisma": "^6.4.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
