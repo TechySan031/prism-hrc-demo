@@ -41,14 +41,31 @@ export default function AnalyzerUploadPage() {
     setStage('uploading');
     setErrorMessage('');
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
       setStage('parsing');
+
+      // Convert to Base64 for 100% reliable serverless JSON transport
+      const fileDataPromise = new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64 = result.includes(',') ? result.split(',')[1] : result;
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const fileData = await fileDataPromise;
+
       const res = await fetch('/api/uploads', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileData,
+          fileName: file.name,
+          mimeType: file.type || 'application/pdf',
+        }),
       });
 
       let data: { success?: boolean; resumeId?: string; error?: string } = {};

@@ -5,6 +5,8 @@ import { getStorageProvider } from '@/lib/storage';
 import { extractTextFromFile, normalizeExtractedText, MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from '@/lib/parser/extractor';
 import { parseRawTextToResume } from '@/lib/parser/resume-parser';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     let user = await getSessionUser();
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
           role: user.role,
         });
       } catch (authErr) {
-        console.warn('Fallback user creation warning:', authErr);
+        console.warn('Fallback user notice:', authErr);
         user = {
           id: 'guest-candidate',
           email: 'candidate@prismhrc.com',
@@ -42,22 +44,45 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const formData = await req.formData();
-    const file = formData.get('file') as File | null;
+    let buffer: Buffer;
+    let fileName = '';
+    let fileType = '';
+    let fileSize = 0;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    const contentType = req.headers.get('content-type') || '';
+
+    // Support both JSON base64 (serverless/Netlify safe) and multipart/form-data
+    if (contentType.includes('application/json')) {
+      const json = await req.json();
+      if (!json.fileData) {
+        return NextResponse.json({ error: 'No file data received' }, { status: 400 });
+      }
+      buffer = Buffer.from(json.fileData, 'base64');
+      fileName = json.fileName || 'My Resume.pdf';
+      fileType = json.mimeType || 'application/pdf';
+      fileSize = buffer.length;
+    } else {
+      const formData = await req.formData();
+      const file = formData.get('file') as File | null;
+
+      if (!file) {
+        return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+      }
+      buffer = Buffer.from(await file.arrayBuffer());
+      fileName = file.name;
+      fileType = file.type || 'application/pdf';
+      fileSize = file.size;
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    if (fileSize > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: `File size exceeds the 10MB limit (uploaded: ${(file.size / (1024 * 1024)).toFixed(1)}MB)` },
+        { error: `File size exceeds 10MB limit (size: ${(fileSize / (1024 * 1024)).toFixed(1)}MB)` },
         { status: 400 }
       );
     }
 
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    const isMimeAllowed = ALLOWED_MIME_TYPES.includes(file.type);
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const isMimeAllowed = ALLOWED_MIME_TYPES.includes(fileType);
     const isExtAllowed = ['pdf', 'docx', 'doc', 'txt'].includes(ext || '');
 
     if (!isMimeAllowed && !isExtAllowed) {
@@ -67,17 +92,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
     // 1. Store file securely (with serverless safe fallback)
     const storage = getStorageProvider();
-    const { storageKey } = await storage.saveFile(buffer, file.name, file.type);
+    const { storageKey } = await storage.saveFile(buffer, fileName, fileType);
 
     // 2. Extract and normalize raw text
     let rawText = '';
     try {
-      rawText = await extractTextFromFile(buffer, file.type, file.name);
+      rawText = await extractTextFromFile(buffer, fileType, fileName);
     } catch (extractError: unknown) {
       const msg = extractError instanceof Error ? extractError.message : 'Text extraction failed';
       return NextResponse.json({ error: `Could not extract text from document: ${msg}` }, { status: 422 });
@@ -86,14 +108,14 @@ export async function POST(req: NextRequest) {
     const normalizedText = normalizeExtractedText(rawText);
     if (!normalizedText || normalizedText.length < 15) {
       return NextResponse.json(
-        { error: 'The document appears to be empty or unreadable (e.g. scanned image without OCR).' },
+        { error: 'The document appears to be empty or unreadable.' },
         { status: 422 }
       );
     }
 
     // 3. Parse into structured Resume Content
-    const structuredContent = parseRawTextToResume(normalizedText, file.name);
-    const resumeTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || 'My Resume';
+    const structuredContent = parseRawTextToResume(normalizedText, fileName);
+    const resumeTitle = fileName.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || 'My Resume';
 
     // 4. Save to PostgreSQL with graceful fallback
     let resumeId = `resume-${Date.now()}`;
@@ -122,9 +144,9 @@ export async function POST(req: NextRequest) {
         data: {
           userId: user.id,
           resumeId: resume.id,
-          originalFilename: file.name,
-          mimeType: file.type || 'application/octet-stream',
-          sizeBytes: file.size,
+          originalFilename: fileName,
+          mimeType: fileType || 'application/octet-stream',
+          sizeBytes: fileSize,
           storageKey,
           storageProvider: process.env.STORAGE_PROVIDER || 'local',
           extractedText: normalizedText,
