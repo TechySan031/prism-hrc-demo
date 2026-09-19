@@ -51,7 +51,13 @@ export default function AnalyzerUploadPage() {
         body: formData,
       });
 
-      const data = await res.json();
+      let data: { success?: boolean; resumeId?: string; error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        const text = await res.text().catch(() => '');
+        data = { error: text || `Server error (${res.status})` };
+      }
 
       if (!res.ok) {
         setErrorMessage(data.error || 'Failed to upload and parse resume.');
@@ -59,12 +65,13 @@ export default function AnalyzerUploadPage() {
         return;
       }
 
-      setCreatedResumeId(data.resumeId);
+      setCreatedResumeId(data.resumeId || null);
       setStage('complete');
       addToast('success', 'Resume parsed and saved to your account!');
       await refreshResumes();
-    } catch {
-      setErrorMessage('Network error occurred during upload. Please try again.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error occurred during upload. Please try again.';
+      setErrorMessage(msg);
       setStage('error');
     }
   };
